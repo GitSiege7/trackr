@@ -14,6 +14,6 @@ func handlerError(err error) {
 }
 
 func main() {
-	const DB_PATH = "./database/times.db"
+	const DB_PATH = "~/.config/trackr/times.db"
 
 }
