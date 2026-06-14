@@ -1,7 +1,7 @@
 # Trackr
 > "Life is an hours game" - Sun Tzu, I think
 
-A time tracking application for those who are motivated by progress (or just want to track time).
+A time tracking application for those who are motivated by progress *(or just want to track time)*.
 
 ## Motivation
 
@@ -11,9 +11,13 @@ I've been learning Japanese for years, and the longer I learn the more I see how
 
 I've learned, over my years of learning, that any time spent learning is progress, and when you can't watch progress, like you can't watch the sun descend (and not just because it will burn your eyes out), you can watch time.
 
-TL;DR: If you like watching numbers go up, Trackr lets you watch numbers go up.
+*TL;DR: If you like watching numbers go up, Trackr helps you watch numbers go up.*
 
 ## Quick Start
 ## Contribution
 
-If you are considering contributing, take a moment to stop and think to yourself: "Oh yeah, this is a great idea" and then do it! All contributions are welcome, just fork and make a PR. Thanks!
+If you are considering contributing, take a moment to stop and think to yourself: 
+
+> "Oh yeah, this is a great idea"
+
+and then do it! All contributions are welcome, just fork and make a PR. Thanks!
