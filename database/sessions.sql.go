@@ -7,7 +7,41 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
+
+const getOngoingSessions = `-- name: GetOngoingSessions :many
+select tracker_id, start_datetime, end_datetime, note from sessions
+where sessions.end_datetime is null
+`
+
+func (q *Queries) GetOngoingSessions(ctx context.Context) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, getOngoingSessions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.TrackerID,
+			&i.StartDatetime,
+			&i.EndDatetime,
+			&i.Note,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const getSessions = `-- name: GetSessions :many
 select tracker_id, start_datetime, end_datetime, note from sessions
@@ -42,24 +76,33 @@ func (q *Queries) GetSessions(ctx context.Context) ([]Session, error) {
 }
 
 const getSessionsByID = `-- name: GetSessionsByID :many
-select tracker_id, start_datetime, end_datetime, note from sessions
+select tracker_id, start_datetime, end_datetime, note, timediff(sessions.end_datetime, sessions.start_datetime) as 'time_elapsed' from sessions
 where sessions.tracker_id = ?
 `
 
-func (q *Queries) GetSessionsByID(ctx context.Context, trackerID int64) ([]Session, error) {
+type GetSessionsByIDRow struct {
+	TrackerID     int64
+	StartDatetime string
+	EndDatetime   sql.NullString
+	Note          sql.NullString
+	TimeElapsed   interface{}
+}
+
+func (q *Queries) GetSessionsByID(ctx context.Context, trackerID int64) ([]GetSessionsByIDRow, error) {
 	rows, err := q.db.QueryContext(ctx, getSessionsByID, trackerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Session
+	var items []GetSessionsByIDRow
 	for rows.Next() {
-		var i Session
+		var i GetSessionsByIDRow
 		if err := rows.Scan(
 			&i.TrackerID,
 			&i.StartDatetime,
 			&i.EndDatetime,
 			&i.Note,
+			&i.TimeElapsed,
 		); err != nil {
 			return nil, err
 		}

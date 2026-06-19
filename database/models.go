@@ -11,7 +11,7 @@ import (
 type Session struct {
 	TrackerID     int64
 	StartDatetime string
-	EndDatetime   string
+	EndDatetime   sql.NullString
 	Note          sql.NullString
 }
 

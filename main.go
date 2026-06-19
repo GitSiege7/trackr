@@ -11,7 +11,7 @@ import (
 // Tests err, if not nil prints error output and exits
 func handlerError(err error, msg string) {
 	if err != nil {
-		fmt.Printf("ERROR: %v %v\n", msg, err)
+		fmt.Printf("ERROR: %v: %v\n", msg, err)
 		os.Exit(1)
 	}
 }
@@ -22,7 +22,7 @@ type config struct {
 
 func main() {
 	queries, err := OpenDB()
-	handlerError(err, "OpenDB: ")
+	handlerError(err, "Failed to open db")
 
 	mux := http.NewServeMux()
 	server := http.Server{
@@ -37,6 +37,9 @@ func main() {
 	mux.HandleFunc("GET /api/sessions", cfg.handlerGetSessions)
 	mux.HandleFunc("GET /api/trackers", cfg.handlerGetTrackers)
 	mux.HandleFunc("GET /api/sessions/{trackerID}", cfg.handlerGetSessionsByID)
+	mux.HandleFunc("GET /api/ongoing", cfg.handlerGetOngoing)
+	// Start session (no end_datetime)
+	// End session (add end_datetime)
 
 	fmt.Println("Listening...")
 	server.ListenAndServe()
