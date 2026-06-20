@@ -6,14 +6,14 @@ import (
 	"strconv"
 )
 
-func (cfg *config) handlerGetSessionsByID(w http.ResponseWriter, r *http.Request) {
+func (cfg *config) handlerGetSessionsByTracker(w http.ResponseWriter, r *http.Request) {
 	trackerID, err := strconv.ParseInt(r.PathValue("trackerID"), 10, 64)
 	if err != nil {
 		respondWithError(w, 400, "Failed to parse trackerID")
 		return
 	}
 
-	sessions, err := cfg.queries.GetSessionsByID(context.TODO(), trackerID)
+	sessions, err := cfg.queries.GetSessionsByTracker(context.TODO(), trackerID)
 	if err != nil {
 		respondWithError(w, 500, "Failed to get sessions")
 	}

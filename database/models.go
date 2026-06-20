@@ -9,6 +9,7 @@ import (
 )
 
 type Session struct {
+	ID            int64
 	TrackerID     int64
 	StartDatetime string
 	EndDatetime   sql.NullString

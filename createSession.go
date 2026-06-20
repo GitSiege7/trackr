@@ -13,11 +13,11 @@ func (cfg *config) handlerCreateSession(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = cfg.queries.CreateSession(context.Background(), trackerID)
+	session, err := cfg.queries.CreateSession(context.Background(), trackerID)
 	if err != nil {
 		respondWithError(w, 500, "Failed to create session")
 		return
 	}
 
-	w.WriteHeader(201)
+	respondWithJSON(w, 201, session)
 }

@@ -10,19 +10,58 @@ import (
 	"database/sql"
 )
 
-const createSession = `-- name: CreateSession :exec
+const createSession = `-- name: CreateSession :one
 insert into sessions (tracker_id, start_datetime)
 values
 (?, datetime('now', 'localtime'))
+returning id, tracker_id, start_datetime, end_datetime, note
 `
 
-func (q *Queries) CreateSession(ctx context.Context, trackerID int64) error {
-	_, err := q.db.ExecContext(ctx, createSession, trackerID)
+func (q *Queries) CreateSession(ctx context.Context, trackerID int64) (Session, error) {
+	row := q.db.QueryRowContext(ctx, createSession, trackerID)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.TrackerID,
+		&i.StartDatetime,
+		&i.EndDatetime,
+		&i.Note,
+	)
+	return i, err
+}
+
+const deleteSession = `-- name: DeleteSession :exec
+delete from sessions
+where sessions.id = ?
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteSession, id)
 	return err
 }
 
+const endSession = `-- name: EndSession :one
+update sessions
+set end_datetime = datetime('now', 'localtime')
+where sessions.id = ?
+returning id, tracker_id, start_datetime, end_datetime, note
+`
+
+func (q *Queries) EndSession(ctx context.Context, id int64) (Session, error) {
+	row := q.db.QueryRowContext(ctx, endSession, id)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.TrackerID,
+		&i.StartDatetime,
+		&i.EndDatetime,
+		&i.Note,
+	)
+	return i, err
+}
+
 const getOngoingSessions = `-- name: GetOngoingSessions :many
-select tracker_id, start_datetime, end_datetime, note from sessions
+select id, tracker_id, start_datetime, end_datetime, note from sessions
 where sessions.end_datetime is null
 `
 
@@ -36,6 +75,7 @@ func (q *Queries) GetOngoingSessions(ctx context.Context) ([]Session, error) {
 	for rows.Next() {
 		var i Session
 		if err := rows.Scan(
+			&i.ID,
 			&i.TrackerID,
 			&i.StartDatetime,
 			&i.EndDatetime,
@@ -54,8 +94,36 @@ func (q *Queries) GetOngoingSessions(ctx context.Context) ([]Session, error) {
 	return items, nil
 }
 
+const getSession = `-- name: GetSession :one
+select id, tracker_id, start_datetime, end_datetime, note, timediff(sessions.end_datetime, sessions.start_datetime) as 'time_elapsed' from sessions
+where sessions.id = ?
+`
+
+type GetSessionRow struct {
+	ID            int64
+	TrackerID     int64
+	StartDatetime string
+	EndDatetime   sql.NullString
+	Note          sql.NullString
+	TimeElapsed   interface{}
+}
+
+func (q *Queries) GetSession(ctx context.Context, id int64) (GetSessionRow, error) {
+	row := q.db.QueryRowContext(ctx, getSession, id)
+	var i GetSessionRow
+	err := row.Scan(
+		&i.ID,
+		&i.TrackerID,
+		&i.StartDatetime,
+		&i.EndDatetime,
+		&i.Note,
+		&i.TimeElapsed,
+	)
+	return i, err
+}
+
 const getSessions = `-- name: GetSessions :many
-select tracker_id, start_datetime, end_datetime, note from sessions
+select id, tracker_id, start_datetime, end_datetime, note from sessions
 `
 
 func (q *Queries) GetSessions(ctx context.Context) ([]Session, error) {
@@ -68,6 +136,7 @@ func (q *Queries) GetSessions(ctx context.Context) ([]Session, error) {
 	for rows.Next() {
 		var i Session
 		if err := rows.Scan(
+			&i.ID,
 			&i.TrackerID,
 			&i.StartDatetime,
 			&i.EndDatetime,
@@ -86,12 +155,13 @@ func (q *Queries) GetSessions(ctx context.Context) ([]Session, error) {
 	return items, nil
 }
 
-const getSessionsByID = `-- name: GetSessionsByID :many
-select tracker_id, start_datetime, end_datetime, note, timediff(sessions.end_datetime, sessions.start_datetime) as 'time_elapsed' from sessions
+const getSessionsByTracker = `-- name: GetSessionsByTracker :many
+select id, tracker_id, start_datetime, end_datetime, note, timediff(sessions.end_datetime, sessions.start_datetime) as 'time_elapsed' from sessions
 where sessions.tracker_id = ?
 `
 
-type GetSessionsByIDRow struct {
+type GetSessionsByTrackerRow struct {
+	ID            int64
 	TrackerID     int64
 	StartDatetime string
 	EndDatetime   sql.NullString
@@ -99,16 +169,17 @@ type GetSessionsByIDRow struct {
 	TimeElapsed   interface{}
 }
 
-func (q *Queries) GetSessionsByID(ctx context.Context, trackerID int64) ([]GetSessionsByIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, getSessionsByID, trackerID)
+func (q *Queries) GetSessionsByTracker(ctx context.Context, trackerID int64) ([]GetSessionsByTrackerRow, error) {
+	rows, err := q.db.QueryContext(ctx, getSessionsByTracker, trackerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetSessionsByIDRow
+	var items []GetSessionsByTrackerRow
 	for rows.Next() {
-		var i GetSessionsByIDRow
+		var i GetSessionsByTrackerRow
 		if err := rows.Scan(
+			&i.ID,
 			&i.TrackerID,
 			&i.StartDatetime,
 			&i.EndDatetime,
@@ -126,4 +197,29 @@ func (q *Queries) GetSessionsByID(ctx context.Context, trackerID int64) ([]GetSe
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateNote = `-- name: UpdateNote :one
+update sessions
+set note = ?
+where sessions.id = ?
+returning id, tracker_id, start_datetime, end_datetime, note
+`
+
+type UpdateNoteParams struct {
+	Note sql.NullString
+	ID   int64
+}
+
+func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) (Session, error) {
+	row := q.db.QueryRowContext(ctx, updateNote, arg.Note, arg.ID)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.TrackerID,
+		&i.StartDatetime,
+		&i.EndDatetime,
+		&i.Note,
+	)
+	return i, err
 }

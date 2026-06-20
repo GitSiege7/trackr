@@ -3,16 +3,14 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/GitSiege7/trackr/database"
 )
 
-// Tests err, if not nil prints error output and exits
+// Tests err, if not nil prints error output
 func handlerError(err error, msg string) {
 	if err != nil {
 		fmt.Printf("ERROR: %v: %v\n", msg, err)
-		os.Exit(1)
 	}
 }
 
@@ -35,12 +33,14 @@ func main() {
 	}
 
 	mux.HandleFunc("GET /api/sessions", cfg.handlerGetSessions)
+	mux.HandleFunc("GET /api/sessions/{sessionID}", cfg.handlerGetSession)
 	mux.HandleFunc("GET /api/trackers", cfg.handlerGetTrackers)
-	mux.HandleFunc("GET /api/sessions/{trackerID}", cfg.handlerGetSessionsByID)
-	mux.HandleFunc("GET /api/ongoing", cfg.handlerGetOngoing)
-	mux.HandleFunc("POST /api/session/{trackerID}", cfg.handlerCreateSession)
-	// End session (update end_datetime)
-	// Add note (update note)
+	mux.HandleFunc("GET /api/trackers/{trackerID}/sessions", cfg.handlerGetSessionsByTracker)
+	mux.HandleFunc("GET /api/sessions/ongoing", cfg.handlerGetOngoing)
+	mux.HandleFunc("POST /api/trackers/{trackerID}/sessions", cfg.handlerCreateSession)
+	mux.HandleFunc("DELETE /api/sessions/{sessionID}", cfg.handlerDeleteSession)
+	mux.HandleFunc("PATCH /api/sessions/{sessionID}/end", cfg.handlerEndSession)
+	mux.HandleFunc("PATCH /api/sessions/{sessionID}/note", cfg.handlerUpdateNote)
 
 	fmt.Println("Listening...")
 	server.ListenAndServe()
