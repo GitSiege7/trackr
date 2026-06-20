@@ -38,8 +38,9 @@ func main() {
 	mux.HandleFunc("GET /api/trackers", cfg.handlerGetTrackers)
 	mux.HandleFunc("GET /api/sessions/{trackerID}", cfg.handlerGetSessionsByID)
 	mux.HandleFunc("GET /api/ongoing", cfg.handlerGetOngoing)
-	// Start session (no end_datetime)
+	mux.HandleFunc("POST /api/session/{trackerID}", cfg.handlerCreateSession)
 	// End session (update end_datetime)
+	// Add note (update note)
 
 	fmt.Println("Listening...")
 	server.ListenAndServe()

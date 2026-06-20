@@ -7,14 +7,16 @@ import (
 )
 
 func (cfg *config) handlerGetSessionsByID(w http.ResponseWriter, r *http.Request) {
-	trackerID, err := strconv.Atoi(r.PathValue("trackerID"))
+	trackerID, err := strconv.ParseInt(r.PathValue("trackerID"), 10, 64)
 	if err != nil {
 		respondWithError(w, 400, "Failed to parse trackerID")
 		return
 	}
 
-	sessions, err := cfg.queries.GetSessionsByID(context.TODO(), int64(trackerID))
-	handlerError(err, "Failed to get sessions")
+	sessions, err := cfg.queries.GetSessionsByID(context.TODO(), trackerID)
+	if err != nil {
+		respondWithError(w, 500, "Failed to get sessions")
+	}
 
 	err = respondWithJSON(w, 200, sessions)
 	handlerError(err, "Failed to respond")

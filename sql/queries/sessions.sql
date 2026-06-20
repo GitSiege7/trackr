@@ -8,3 +8,8 @@ where sessions.tracker_id = ?;
 -- name: GetOngoingSessions :many
 select * from sessions
 where sessions.end_datetime is null;
+
+-- name: CreateSession :exec
+insert into sessions (tracker_id, start_datetime)
+values
+(?, datetime('now', 'localtime'));

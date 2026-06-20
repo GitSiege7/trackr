@@ -10,6 +10,17 @@ import (
 	"database/sql"
 )
 
+const createSession = `-- name: CreateSession :exec
+insert into sessions (tracker_id, start_datetime)
+values
+(?, datetime('now', 'localtime'))
+`
+
+func (q *Queries) CreateSession(ctx context.Context, trackerID int64) error {
+	_, err := q.db.ExecContext(ctx, createSession, trackerID)
+	return err
+}
+
 const getOngoingSessions = `-- name: GetOngoingSessions :many
 select tracker_id, start_datetime, end_datetime, note from sessions
 where sessions.end_datetime is null
