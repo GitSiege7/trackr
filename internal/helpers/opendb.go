@@ -1,4 +1,4 @@
-package internal
+package helpers
 
 import (
 	"database/sql"
@@ -12,7 +12,7 @@ import (
 
 func migrateUp(db *sql.DB) error {
 	goose.SetDialect("sqlite3")
-	err := goose.Up(db, "./sql/schema")
+	err := goose.Up(db, "../../sql/schema")
 	if err != nil {
 		return err
 	}

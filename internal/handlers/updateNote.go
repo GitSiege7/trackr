@@ -1,4 +1,4 @@
-package internal
+package handlers
 
 import (
 	"context"
@@ -8,12 +8,13 @@ import (
 	"strconv"
 
 	"github.com/GitSiege7/trackr/database"
+	"github.com/GitSiege7/trackr/internal/helpers"
 )
 
-func (cfg *config) handlerUpdateNote(w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) HandlerUpdateNote(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := strconv.ParseInt(r.PathValue("sessionID"), 10, 64)
 	if err != nil {
-		respondWithError(w, 400, "Failed to parse sessionID")
+		helpers.RespondWithError(w, 400, "Failed to parse sessionID")
 		return
 	}
 
@@ -25,11 +26,11 @@ func (cfg *config) handlerUpdateNote(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&dat)
 	if err != nil {
-		respondWithError(w, 500, "Failed to decode request body")
+		helpers.RespondWithError(w, 500, "Failed to decode request body")
 		return
 	}
 
-	session, err := cfg.queries.UpdateNote(context.Background(),
+	session, err := cfg.Queries.UpdateNote(context.Background(),
 		database.UpdateNoteParams{
 			Note: sql.NullString{
 				String: dat.Note,
@@ -38,10 +39,10 @@ func (cfg *config) handlerUpdateNote(w http.ResponseWriter, r *http.Request) {
 			ID: sessionID,
 		})
 	if err != nil {
-		respondWithError(w, 500, "Failed to update session")
+		helpers.RespondWithError(w, 500, "Failed to update session")
 		return
 	}
 
-	err = respondWithJSON(w, 200, session)
-	handlerError(err, "Failed to respond")
+	err = helpers.RespondWithJSON(w, 200, session)
+	helpers.HandlerError(err, "Failed to respond")
 }
